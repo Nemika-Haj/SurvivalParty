@@ -1,0 +1,8 @@
+name: SurvivalParty
+version: '${project.version}'
+main: dev.bytestobits.survivalparty.SurvivalParty
+api-version: 1.19
+commands:
+  party:
+    default: true
+    usage: /<command> <create | info | setbase | base | tp> [player]
