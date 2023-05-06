@@ -47,4 +47,19 @@ object Messages {
     val PartyNoteIDMissing = coloredMessage("&cProvide a valid &eNote ID &cto remove.")
     fun PartyNoteDeleted(noteID: String) = coloredMessage("&cYou deleted &eNote #$noteID&c.")
 
+    val PartyWarpMissingName = coloredMessage("&cYou must provide a &eWarp Name&c.")
+    val PartyWarpExists = coloredMessage("&cThere already is a warp with that name.")
+    val PartyWarpDoesNotExist = coloredMessage("&cThere is no warp with that name.")
+    val PartyWarpNoWarps = coloredMessage("&cThe party has no warps.")
+    fun PartyWarpCreated(warp: String) = coloredMessage("&aSuccessfully created warp &e$warp&a.")
+    fun PartyWarpDeleted(warp: String) = coloredMessage("&aSuccessfully deleted warp &e$warp&a.")
+    fun PartyWarpTp(warp: String) = coloredMessage("&aYou teleported to &e$warp&a!")
+
+
+    val WhitelistActivated = coloredMessage("&7Whitelist is now &aActivated&7!")
+    val WhitelistDeactivated = coloredMessage("&7Whitelist is now &cDeactivated&7!")
+    val WhitelistMemberMissing = coloredMessage("&7Provide a &eMember&7.")
+    fun WhitelistMemberAdded(member: String) = coloredMessage("&7Added &e$member &7to the whitelist.")
+    fun WhitelistMemberRemoved(member: String) = coloredMessage("&7Removed &e$member &7from the whitelist.")
+
 }

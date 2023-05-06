@@ -6,3 +6,8 @@ commands:
   party:
     default: true
     usage: /<command> <create | info | setbase | base | tp> [player]
+    aliases:
+      - p
+  whitelist:
+    default: op
+    usage: /<command> <on | off | list | add | remove> [player]

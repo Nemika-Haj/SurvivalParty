@@ -14,7 +14,7 @@ class PartyCore(private val plugin: SurvivalParty): CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>?): Boolean {
         if(sender !is Player){
             sender.sendMessage("You cannot do this")
-            return true
+            return true;
         }
 
         if (args != null && args.isNotEmpty()) {
@@ -27,6 +27,10 @@ class PartyCore(private val plugin: SurvivalParty): CommandExecutor {
                 "notes" -> PartyNotes(sender)
                 "addnote" -> PartyAddNote(sender, args.copyOfRange(1, args.size))
                 "delnote" -> PartyDeleteNote(sender, args[1])
+                "addwarp" -> PartyAddWarp(sender, args[1])
+                "delwarp" -> PartyDeleteNote(sender, args[1])
+                "warps" -> PartyWarpList(sender)
+                "warp" -> PartyTpToWarp(sender, args[1])
                 else -> sender.sendMessage(Messages.PartyMainMissingArgs)
             }
 
@@ -122,4 +126,49 @@ class PartyCore(private val plugin: SurvivalParty): CommandExecutor {
 
     }
 
+    private fun PartyAddWarp(player: Player, warpName: String?) {
+        val party = Checks.getParty(plugin.config, player) ?: return player.sendMessage(Messages.PartyInfoNotInParty)
+        if(warpName == null) return player.sendMessage(Messages.PartyWarpMissingName)
+
+        val warps = party.second.getConfigurationSection("warps")
+
+        if(warps?.getLocation(warpName) != null) return player.sendMessage(Messages.PartyWarpExists)
+
+        warps!!.set(warpName, player.location)
+        plugin.saveConfig()
+        return player.sendMessage(Messages.PartyWarpCreated(warpName))
+    }
+
+    private fun PartyDeleteWarp(player: Player, warpName: String?) {
+        val party = Checks.getParty(plugin.config, player) ?: return player.sendMessage(Messages.PartyInfoNotInParty)
+        if(warpName == null) return player.sendMessage(Messages.PartyWarpMissingName)
+
+        val warps = party.second.getConfigurationSection("warps")
+
+        if(warps?.getLocation(warpName) == null) return player.sendMessage(Messages.PartyWarpDoesNotExist)
+
+        warps.set(warpName, null)
+        plugin.saveConfig()
+        return player.sendMessage(Messages.PartyWarpDeleted(warpName))
+    }
+
+    private fun PartyTpToWarp(player: Player, warpName: String?) {
+        val party = Checks.getParty(plugin.config, player) ?: return player.sendMessage(Messages.PartyInfoNotInParty)
+        if(warpName == null) return player.sendMessage(Messages.PartyWarpMissingName)
+
+        val warps = party.second.getConfigurationSection("warps")
+        val warp = warps?.getLocation(warpName) ?: return player.sendMessage(Messages.PartyWarpDoesNotExist)
+
+        player.teleport(warp)
+        return player.sendMessage(Messages.PartyWarpTp(warpName))
+    }
+
+    private fun PartyWarpList(player: Player) {
+        val party = Checks.getParty(plugin.config, player) ?: return player.sendMessage(Messages.PartyInfoNotInParty)
+        val warps = party.second.getConfigurationSection("warps")?.getKeys(false)
+
+        if(warps == null || warps.size == 0) return player.sendMessage(Messages.PartyWarpNoWarps)
+
+        return player.sendMessage(Messages.coloredMessage("&aAvailable party warps: " + warps.joinToString("&a, ") { Messages.coloredMessage("&e$it") }))
+    }
 }
