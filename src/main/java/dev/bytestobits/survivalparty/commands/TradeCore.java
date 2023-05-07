@@ -46,11 +46,22 @@ public class TradeCore implements CommandExecutor {
             case "list":
                 listTrades(commandSender);
                 break;
+            case "help":
+                displayHelpMessage(commandSender);
+                break;
             default:
                 addTrade(commandSender, args);
                 break;
         }
         return true;
+    }
+
+    private void displayHelpMessage(CommandSender commandSender) {
+        commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&6/trade list : shows the list of available trades and their IDs"));
+        commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&6/trade accept <tradeID>: accepts a trade with the specified trade ID"));
+        commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&6When accepting a trade, the first item specified is the item you want, and the second item is the price, i.e what you will give in exchange for that item"));
+        commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&6/trade <count> <item name> <count> <item name> : adds a trade to the list of available trades"));
+        commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&6When adding a trade, the first item you specify is the item you(the trader) are giving out, and the second item is the price, i.e what you want in exchange for that item"));
     }
 
     private void addTrade(CommandSender commandSender, String[] args) {
