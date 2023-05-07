@@ -149,7 +149,6 @@ public class TradeCore implements CommandExecutor {
             }
 
             if(amount > 0) {
-
                 status = TradeStatus.ACCEPTER_MISSING_ITEMS;
             }
 
@@ -174,11 +173,14 @@ public class TradeCore implements CommandExecutor {
                 status = TradeStatus.TRADER_MISSING_ITEMS;
             }
 
-            offeringPlayer.getInventory().removeItem(trades.get(tradeID).offer);
-            offeringPlayer.getInventory().addItem(trades.get(tradeID).price);
-            acceptingPlayer.getInventory().removeItem(trades.get(tradeID).price);
-            acceptingPlayer.getInventory().addItem(trades.get(tradeID).offer);
-            trades.remove(tradeID);
+            if(status == TradeStatus.ACCEPTED) {
+                offeringPlayer.getInventory().removeItem(trades.get(tradeID).offer);
+                offeringPlayer.getInventory().addItem(trades.get(tradeID).price);
+                acceptingPlayer.getInventory().removeItem(trades.get(tradeID).price);
+                acceptingPlayer.getInventory().addItem(trades.get(tradeID).offer);
+                trades.remove(tradeID);
+            }
+
             displayStatusMessage(offeringPlayer, acceptingPlayer, status);
         }
     }
