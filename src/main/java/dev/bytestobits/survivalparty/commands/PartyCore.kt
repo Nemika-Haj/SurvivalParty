@@ -54,7 +54,7 @@ class PartyCore(private val plugin: SurvivalParty): CommandExecutor {
     }
 
     private fun PartyDeleteNote(player: Player, noteID: String?) {
-        val party = Checks.getParty(plugin.config, player) ?: return player.sendMessage(Messages.PartyInfoNotInParty)
+        val party = Checks.getParty(plugin.config, player)?: return player.sendMessage(Messages.PartyInfoNotInParty)
         if(noteID == null) return player.sendMessage(Messages.PartyNoteIDMissing)
 
         val notes = party.second.getStringList("notes").filterIndexed { index, note -> index.toString() != noteID  }

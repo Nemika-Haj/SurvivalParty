@@ -11,3 +11,6 @@ commands:
   whitelist:
     default: op
     usage: /<command> <on | off | list | add | remove> [player]
+  trade:
+    default: true
+    usage: /<command> <player>
