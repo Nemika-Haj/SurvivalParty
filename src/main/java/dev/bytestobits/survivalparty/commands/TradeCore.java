@@ -71,14 +71,16 @@ public class TradeCore implements CommandExecutor {
 
     private void listTrades(CommandSender commandSender) {
         if(trades.size() == 0) {
-            commandSender.sendMessage("There are currently no trades available");
-        }
-        for(int i = 0; i < trades.size(); i++) {
-            String offerItem = trades.get(i).offer.getType().toString();
-            String priceItem = trades.get(i).price.getType().toString();
-            int offerCount = trades.get(i).offer.getAmount();
-            int priceCount = trades.get(i).price.getAmount();
-            commandSender.sendMessage(i + ") " + offerCount + " " + offerItem + " for " + priceCount + " " + priceItem);
+            commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&eThere are currently no trades available"));
+        }else{
+            commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&6Trades List:"));
+            for(int i = 0; i < trades.size(); i++) {
+                String offerItem = trades.get(i).offer.getType().toString();
+                String priceItem = trades.get(i).price.getType().toString();
+                int offerCount = trades.get(i).offer.getAmount();
+                int priceCount = trades.get(i).price.getAmount();
+                commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&b" + i + ")   &6" + offerCount + " " + offerItem + " for " + priceCount + " " + priceItem));
+            }
         }
     }
 
