@@ -14,6 +14,15 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+enum TradeStatus {
+    MISSING_TRADE_ID,
+    TRADE_NOT_FOUND,
+    ACCEPTER_MISSING_ITEMS,
+    TRADER_MISSING_ITEMS,
+    TRADER_OFFLINE,
+    ACCEPTED
+}
+
 public class TradeCore implements CommandExecutor {
 
     private final LinkedList<Trade> trades = new LinkedList<>();
@@ -30,103 +39,134 @@ public class TradeCore implements CommandExecutor {
             return true;
         }
 
-        if (args[0].equals("accept")) {
-            // args[1] must be trade id
-            int tradeID = 0;
-            if (args.length < 2) {
-                commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cPlease specify the ID of the trade you want to accept"));
-                commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cUse /trade list to view available trades"));
-                return true;
-            } else {
-                tradeID = Integer.parseInt(args[1]);
+        switch(args[0]){
+            case "accept":
+                acceptTrade(commandSender, args);
+                break;
+            case "list":
+                listTrades(commandSender);
+                break;
+            default:
+                addTrade(commandSender, args);
+                break;
+        }
+        return true;
+    }
+
+    private void addTrade(CommandSender commandSender, String[] args) {
+        if (Material.getMaterial(args[1].toUpperCase()) == null) {
+            commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cThe first item you entered(" + args[1] + ") does not exist"));
+            return;
+        } else if(Material.getMaterial(args[3].toUpperCase()) == null){
+            commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cThe second item you entered(" + args[3] + ") does not exist"));
+            return;
+        }
+
+        ItemStack offer = new ItemStack(Material.getMaterial(args[1].toUpperCase()));
+        offer.setAmount(Integer.parseInt(args[0]));
+        ItemStack price = new ItemStack(Material.getMaterial(args[3].toUpperCase()));
+        price.setAmount(Integer.parseInt(args[2]));
+        trades.add(new Trade(commandSender.getName(), offer, price));
+    }
+
+    private void listTrades(CommandSender commandSender) {
+        if(trades.size() == 0) {
+            commandSender.sendMessage("There are currently no trades available");
+        }
+        for(int i = 0; i < trades.size(); i++) {
+            String offerItem = trades.get(i).offer.getType().toString();
+            String priceItem = trades.get(i).price.getType().toString();
+            int offerCount = trades.get(i).offer.getAmount();
+            int priceCount = trades.get(i).price.getAmount();
+            commandSender.sendMessage(i + ") " + offerCount + " " + offerItem + " for " + priceCount + " " + priceItem);
+        }
+    }
+
+    private void displayStatusMessage(Player offeringPlayer, Player acceptingPlayer, TradeStatus status) {
+        switch(status) {
+            case MISSING_TRADE_ID:
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&cPlease specify the ID of the trade you want to accept"));
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&cUse /trade list to view available trades"));
+                break;
+            case TRADE_NOT_FOUND:
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&cNo trade with that ID was found"));
+                break;
+            case ACCEPTER_MISSING_ITEMS:
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&cYou do not have enough items to accept this trade"));
+                break;
+            case TRADER_MISSING_ITEMS:
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&eThe trader doesn't have the items to accept this trade"));
+                offeringPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&cSomeone has tried to accept your trade but you don't have the offered items in your inventory"));
+                break;
+            case TRADER_OFFLINE:
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&cThe player is offline"));
+                break;
+            case ACCEPTED:
+                acceptingPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&aYou have successfully accepted the trade!"));
+                offeringPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&a" + acceptingPlayer.getName() + " has accepted your trade!"));
+                break;
+        }
+    }
+
+    private void acceptTrade(CommandSender commandSender, String[] args) {
+        int tradeID = 0;
+        TradeStatus status = TradeStatus.ACCEPTED;
+        if (args.length < 2) {
+            status = TradeStatus.MISSING_TRADE_ID;
+        } else {
+            tradeID = Integer.parseInt(args[1]);
+        }
+
+        if (trades.size() <= tradeID) {
+            status = TradeStatus.TRADE_NOT_FOUND;
+        }else{
+            // The actual trading code
+            Player acceptingPlayer = (Player)commandSender;
+
+            int amount = trades.get(tradeID).price.getAmount();
+
+            // Check if the accepting player has the items to accept the trade
+            for(int i = 0; i < acceptingPlayer.getInventory().getSize(); i++) {
+                ItemStack item = acceptingPlayer.getInventory().getItem(i);
+                if(item != null) {
+                    if(item.getType() == trades.get(tradeID).price.getType()) {
+                        amount -= item.getAmount();
+                    }
+                }
             }
 
-            if (trades.size() <= tradeID) {
-                commandSender.sendMessage(ChatColor.RED + "No trade with that ID was found");
-                return true;
-            }else{
-                // The actual trading code
-                Player acceptingPlayer = (Player)commandSender;
+            if(amount > 0) {
 
-                int amount = trades.get(tradeID).price.getAmount();
+                status = TradeStatus.ACCEPTER_MISSING_ITEMS;
+            }
 
-                // Check if the accepting player has the items to accept the trade
-                for(int i = 0; i < acceptingPlayer.getInventory().getSize(); i++) {
-                    ItemStack item = acceptingPlayer.getInventory().getItem(i);
+            // Check if the offering player has the items to accept the trade
+            Player offeringPlayer = Bukkit.getServer().getPlayerExact(trades.get(tradeID).traderName);
+
+            amount = trades.get(tradeID).offer.getAmount();
+
+            if(offeringPlayer != null) {
+                for(ItemStack item : offeringPlayer.getInventory().getContents()) {
                     if(item != null) {
-                        if(item.getType() == trades.get(tradeID).price.getType()) {
+                        if (item.getType() == trades.get(tradeID).offer.getType()) {
                             amount -= item.getAmount();
                         }
                     }
                 }
-
-                if(amount > 0) {
-                    commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cYou do not have enough items to accept this trade"));
-                    return true;
-                }
-
-                // Check if the offering player has the items to accept the trade
-                Player offeringPlayer = Bukkit.getServer().getPlayerExact(trades.get(tradeID).traderName);
-
-                amount = trades.get(tradeID).offer.getAmount();
-
-                if(offeringPlayer != null) {
-                    for(ItemStack item : offeringPlayer.getInventory().getContents()) {
-                        if(item != null) {
-                            if (item.getType() == trades.get(tradeID).offer.getType()) {
-                                amount -= item.getAmount();
-                            }
-                        }
-                    }
-                }else{
-                    commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cThe player is offline"));
-                    return true;
-                }
-
-                if(amount > 0) {
-                    commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&eThe trader doesn't have the items to accept this trade"));
-                    offeringPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&c" + acceptingPlayer.getName() + " has tried to accept your trade but you don't have the offered items in your inventory"));
-                    return true;
-                }
-
-                offeringPlayer.getInventory().removeItem(trades.get(tradeID).offer);
-                offeringPlayer.getInventory().addItem(trades.get(tradeID).price);
-                acceptingPlayer.getInventory().removeItem(trades.get(tradeID).price);
-                acceptingPlayer.getInventory().addItem(trades.get(tradeID).offer);
-                trades.remove(tradeID);
-                commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&aYou have successfully accepted the trade!"));
-                offeringPlayer.sendMessage(Messages.INSTANCE.coloredMessage("&a" + acceptingPlayer.getName() + " has accepted your trade!"));
-            }
-            // If player found, check if requirements are met and accept the trade
-            // If player is not found, send error message
-        } else if (args[0].equals("list")) {
-            if(trades.size() == 0) {
-                commandSender.sendMessage("There are currently no trades available");
-            }
-            for(int i = 0; i < trades.size(); i++) {
-                String offerItem = trades.get(i).offer.getType().toString();
-                String priceItem = trades.get(i).price.getType().toString();
-                int offerCount = trades.get(i).offer.getAmount();
-                int priceCount = trades.get(i).price.getAmount();
-                commandSender.sendMessage(i + ") " + offerCount + " " + offerItem + " for " + priceCount + " " + priceItem);
-            }
-        } else {
-            // If args[0] is not accept then it must be an item
-            // if args[0] is an item, get the item count in args[1]
-            if (Material.getMaterial(args[1].toUpperCase()) == null) {
-                commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cThe first item you entered(" + args[1] + ") does not exist"));
-            } else if(Material.getMaterial(args[3].toUpperCase()) == null){
-                commandSender.sendMessage(Messages.INSTANCE.coloredMessage("&cThe second item you entered(" + args[3] + ") does not exist"));
             }else{
-                ItemStack offer = new ItemStack(Material.getMaterial(args[1].toUpperCase()));
-                offer.setAmount(Integer.parseInt(args[0]));
-                ItemStack price = new ItemStack(Material.getMaterial(args[3].toUpperCase()));
-                price.setAmount(Integer.parseInt(args[2]));
-                trades.add(new Trade(commandSender.getName(), offer, price));
+                status = TradeStatus.TRADER_OFFLINE;
             }
 
-        }
+            if(amount > 0) {
+                status = TradeStatus.TRADER_MISSING_ITEMS;
+            }
 
-        return true;
+            offeringPlayer.getInventory().removeItem(trades.get(tradeID).offer);
+            offeringPlayer.getInventory().addItem(trades.get(tradeID).price);
+            acceptingPlayer.getInventory().removeItem(trades.get(tradeID).price);
+            acceptingPlayer.getInventory().addItem(trades.get(tradeID).offer);
+            trades.remove(tradeID);
+            displayStatusMessage(offeringPlayer, acceptingPlayer, status);
+        }
     }
 }
